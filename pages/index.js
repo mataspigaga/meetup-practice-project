@@ -1,24 +1,7 @@
 // domain.com/
 
-import { useEffect, useState } from "react";
+import { MongoClient } from "mongodb";
 import MeetupList from "../components/meetups/MeetupList";
-
-const DUMMY_MEETUPS = [
-  {
-    id: "m1",
-    title: "A First Meetup",
-    image: "https://picsum.photos/seed/firstmeetup/1500",
-    address: "123 Main St, City, State, 12345",
-    description: "This is the first test description",
-  },
-  {
-    id: "m2",
-    title: "A Second Meetup",
-    image: "https://picsum.photos/seed/secondmeetup/1500",
-    address: "456 Main St, City, State, 12345",
-    description: "This is the second test description",
-  },
-];
 
 const HomePage = (props) => {
   return <MeetupList meetups={props.meetups} />;
@@ -26,13 +9,27 @@ const HomePage = (props) => {
 
 export const getStaticProps = async () => {
   // fetch data from an API
+  // this code will execute when the page is pre-generated
+  const client = await MongoClient.connect(
+    "mongodb+srv://mataspigaga:Centennial1905@cluster0.wnsdo.mongodb.net/meetups?retryWrites=true&w=majority"
+  );
+  const db = client.db();
+  const meetupsCollection = db.collection("meetups");
+  const meetups = await meetupsCollection.find().toArray();
+  client.close();
+
   return {
     props: {
-      meetups: DUMMY_MEETUPS,
+      meetups: meetups.map((meetup) => ({
+        title: meetup.title,
+        address: meetup.address,
+        image: meetup.image,
+        id: meetup._id.toString(),
+      })),
     },
     // used for pages that tend to get new data or content
-    // data is never older than 10 seconds
-    revalidate: 10,
+    // data is never older than 1 second(s)
+    revalidate: 1,
   };
 };
 
@@ -53,4 +50,3 @@ export default HomePage;
 //     },
 //   };
 // };
-
